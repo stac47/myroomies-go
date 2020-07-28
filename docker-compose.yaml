@@ -1,0 +1,16 @@
+version: "3.5"
+services:
+  myroomies-rest:
+    build: .
+    environment:
+      - MYROOMIES_DATA_STORAGE=mongodb://myroomies-mongo:27017
+      - MYROOMIES_ROOT_LOGIN
+      - MYROOMIES_ROOT_PASSWORD
+    ports:
+      - "8080:8080"
+    depends_on:
+      - myroomies-mongo
+  myroomies-mongo:
+    image: mongo:latest
+    volumes:
+      - ~/myroomies-mongo:/data/db
