@@ -1,11 +1,15 @@
 GO := go
 
 .PHONY: all
-all: build-server
+all: build-server build-client
 
 .PHONY: build-server
 build-server:
 	$(GO) build ./cmd/myroomies-server
+
+.PHONY: build-client
+build-client:
+	$(GO) build ./cmd/myroomies-client
 
 .PHONY: test-e2e
 test-e2e: all
