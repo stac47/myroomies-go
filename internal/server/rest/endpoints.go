@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/stac47/myroomies/internal/server/data"
 	"github.com/stac47/myroomies/internal/server/services"
@@ -117,7 +119,19 @@ type ServerConfig struct {
 	BindTo  string
 }
 
+func registerSignalHandlers() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		s := <-c
+		log.Infof("Received signal (%s). The server will shutdown.", s)
+		services.Shutdown()
+		os.Exit(0)
+	}()
+}
+
 func Start(config ServerConfig) {
+	registerSignalHandlers()
 	if strings.Contains(config.Storage, "mongodb://") {
 		services.Configure(data.MongoDataAccessParams{Server: config.Storage})
 	} else {

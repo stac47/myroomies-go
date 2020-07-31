@@ -15,6 +15,8 @@ const (
 	myroomiesDatabase = "myroomies"
 )
 
+var mongoClient *mongo.Client
+
 // Factory to access data from MongoDB
 
 type MongoDataAccessParams struct {
@@ -42,7 +44,6 @@ func NewMongoDataAccessFactory(params MongoDataAccessParams) *mongoDataAccessFac
 
 	tryCounter := 1
 	currentRetryPeriodSeconds := retryPeriodSeconds
-	var mongoClient *mongo.Client
 	for {
 		if tryCounter == maxConnectionTries {
 			panic("Error connecting to MongoDB")
@@ -72,10 +73,16 @@ func NewMongoDataAccessFactory(params MongoDataAccessParams) *mongoDataAccessFac
 	}
 }
 
-func (f mongoDataAccessFactory) GetUserDataAccess() UserDataAccess {
+func (f *mongoDataAccessFactory) GetUserDataAccess() UserDataAccess {
 	return GetMongoUserDataAccess(f.mongoClient.Database(myroomiesDatabase))
 }
 
-func (f mongoDataAccessFactory) GetExpenseDataAccess() ExpenseDataAccess {
+func (f *mongoDataAccessFactory) GetExpenseDataAccess() ExpenseDataAccess {
 	return GetMongoExpenseDataAccess(f.mongoClient.Database(myroomiesDatabase))
+}
+
+func (f *mongoDataAccessFactory) Close() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	return mongoClient.Disconnect(ctx)
 }

@@ -4,10 +4,14 @@ package data
 
 type memoryDataAccessFactory struct{}
 
-func (f memoryDataAccessFactory) GetUserDataAccess() UserDataAccess {
+func (f *memoryDataAccessFactory) GetUserDataAccess() UserDataAccess {
 	return GetMemoryUserDataAccess()
 }
 
-func (f memoryDataAccessFactory) GetExpenseDataAccess() ExpenseDataAccess {
+func (f *memoryDataAccessFactory) GetExpenseDataAccess() ExpenseDataAccess {
 	return GetMemoryExpenseDataAccess()
+}
+
+func (f *memoryDataAccessFactory) Close() error {
+	return nil
 }

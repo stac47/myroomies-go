@@ -3,6 +3,7 @@ package data
 type DataAccessFactory interface {
 	GetUserDataAccess() UserDataAccess
 	GetExpenseDataAccess() ExpenseDataAccess
+	Close() error
 }
 
 func NewDataAccessFactory(params interface{}) DataAccessFactory {

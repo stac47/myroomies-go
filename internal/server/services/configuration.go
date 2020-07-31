@@ -14,7 +14,6 @@ func GetDataAccess() data.DataAccessFactory {
 	if dataAccessFactory == nil {
 		log.Fatal("Error: you have to initialize the services with ConfigureServices")
 	}
-	log.Infof("Data Access [%p]", dataAccessFactory)
 	return dataAccessFactory
 }
 
@@ -27,4 +26,9 @@ func Configure(dataAccessParams interface{}) {
 	log.Info("Creating data access layer")
 	dataAccessFactory = data.NewDataAccessFactory(dataAccessParams)
 	log.Infof("Data access factory created at [%p]", dataAccessFactory)
+}
+
+func Shutdown() {
+	dataAccessFactory.Close()
+	log.Info("Database connection closed.")
 }
