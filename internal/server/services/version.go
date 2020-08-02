@@ -1,9 +1,5 @@
 package services
 
 const (
-	Version = "0.0.1"
+	version = "0.9.1"
 )
-
-func GetVersion() string {
-	return Version
-}

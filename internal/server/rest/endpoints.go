@@ -54,8 +54,7 @@ func registerEndpoints() {
 
 	// Add your handlers hereafter
 	// Technical handlers
-	router.HandleFunc("/version", version).Methods("GET")
-	router.HandleFunc("/echo/{key:\\d+}", echo).Methods("GET")
+	router.HandleFunc("/info", getGlobalInfo).Methods("GET")
 	router.HandleFunc("/reset",
 		hasRights(AdminRight, resetServer)).Methods("POST")
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVER_BIN="${SCRIPT_DIR}/../myroomies-server"
-CLIENT_BIN="${SCRIPT_DIR}/../myroomies-client"
+PROJECT_DIR="$(dirname ${SCRIPT_DIR})"
+SERVER_BIN="${PROJECT_DIR}/myroomies-server"
+CLIENT_BIN="${PROJECT_DIR}/myroomies-client"
 
 DEFAULT_ROOT_LOGIN="root"
 DEFAULT_ROOT_PASSWORD="defaultpass"
@@ -44,10 +45,15 @@ function myroomies_start_server() {
         scheme="https"
     fi
     local server_pid=$!
-    until $(curl 2>/dev/null --output /dev/null --silent --insecure --fail ${scheme}://localhost:${port}/version); do
+    until $(curl 2>/dev/null --output /dev/null --silent --insecure --fail ${scheme}://localhost:${port}/info); do
         sleep 0.1
     done
     echo ${server_pid}
+}
+
+function myroomies_get_version() {
+    local version_file="${PROJECT_DIR}/internal/server/services/version.go"
+    echo $(grep 'version' ${version_file} | cut -d '"' -f 2)
 }
 
 function myroomies_stop_server() {
