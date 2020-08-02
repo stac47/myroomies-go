@@ -142,7 +142,7 @@ func deleteCmdRun(cmd *cobra.Command, args []string) error {
 	for _, id := range ids {
 		err := cli.ExpenseDelete(id)
 		if err != nil {
-			fmt.Printf("WARNING: Could not delete expense [id=%d]: %s\n", id, err)
+			fmt.Printf("WARNING: Could not delete expense [id=%s]: %s\n", id, err)
 		}
 	}
 	return nil
@@ -181,7 +181,7 @@ func updateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := cli.ExpenseUpdate(id, expense); err != nil {
 		return err
 	}
-	fmt.Printf("Updated expense: %d\n", expense.Id)
+	fmt.Printf("Updated expense: %s\n", expense.Id)
 	return nil
 }
 

@@ -23,16 +23,28 @@ function myroomies_start_server() {
     local root_login=${1:-${DEFAULT_ROOT_LOGIN}}
     local root_password=${2:-${DEFAULT_ROOT_PASSWORD}}
     local port=${3:-"${MYROOMIES_SERVER_PORT}"}
+    local cert_file=${4}
+    local key_file=${5}
     export MYROOMIES_ROOT_LOGIN="${root_login}"
     export MYROOMIES_ROOT_PASSWORD="${root_password}"
     local mongodb_uri=${MYROOMIES_E2E_TESTS_MONGODB_ADDRESS}
     local server_options="--bind-to :${port}"
+    if [[ -n "${cert_file}" ]]; then
+        server_options+=" --cert-file ${cert_file}"
+    fi
+    if [[ -n "${cert_file}" ]]; then
+        server_options+=" --key-file ${key_file}"
+    fi
     if [[ -n "${mongodb_uri}" ]]; then
-        server_options="${server_options} --storage ${mongodb_uri}"
+        server_options+=" --storage ${mongodb_uri}"
     fi
     ${SERVER_BIN} ${server_options} >>e2e_test_server.log 2>&1 &
+    local scheme="http"
+    if [[ -n "${cert_file}" && -n "${key_file}" ]]; then
+        scheme="https"
+    fi
     local server_pid=$!
-    until $(curl 2>/dev/null --output /dev/null --silent --fail http://localhost:${port}/version); do
+    until $(curl 2>/dev/null --output /dev/null --silent --insecure --fail ${scheme}://localhost:${port}/version); do
         sleep 0.1
     done
     echo ${server_pid}
@@ -48,6 +60,14 @@ function myroomies_reset_server() {
         -u ${DEFAULT_HTTP_AUTHORIZATION} \
         -X POST \
         ${MYROOMIES_SERVER_URL}/reset
+}
+
+function myroomies_generate_keys() {
+    local cert_out=${1:?"Missing location of the generated certificate"}
+    local key_out=${2:?"Missing location of the generated private key"}
+    openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+        -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com" \
+        -keyout ${key_out} -out ${cert_out}
 }
 
 

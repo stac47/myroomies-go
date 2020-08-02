@@ -13,11 +13,15 @@ import (
 
 func init() {
 	rootCmd.Flags().StringVarP(&serverConfig.Storage, "storage", "", "",
-		"MongoDB URI (e.g. mongodb://localhost:27017). By default, the "+
-			"data will be stored in memory and will be lost when the server "+
-			"shutdown.")
+		"MongoDB URL (e.g. mongodb://localhost:27017). If no value "+
+			"or an invalid MongoDB URL is provided, MyRoomies will store the data "+
+			"in memory and will be lost at server shutdown.")
 	rootCmd.Flags().StringVarP(&serverConfig.BindTo, "bind-to", "", ":8080",
 		"Bind MyRoomies server to a given address")
+	rootCmd.Flags().StringVarP(&serverConfig.CertificatePath, "cert-file", "", "",
+		"Path to the certificate to enable TLS connections. To be used with --key-file.")
+	rootCmd.Flags().StringVarP(&serverConfig.KeyPath, "key-file", "", "",
+		"Path to the private key to enable TLS connections. To be used with --cert-file.")
 }
 
 var (
@@ -33,12 +37,11 @@ organize their tasks and expenses`,
 )
 
 func startServer(cmd *cobra.Command, args []string) error {
-	rest.Start(serverConfig)
-	return nil
+	return rest.Start(serverConfig)
 }
 
 func main() {
-	log.Println(strings.Join(os.Args, " "))
+	log.Debug(strings.Join(os.Args, " "))
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

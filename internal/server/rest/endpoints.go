@@ -87,7 +87,7 @@ func registerEndpoints() {
 	http.Handle("/", router)
 }
 
-func createAdminOnFirstStart() (err error) {
+func createAdminOnFirstStart() error {
 	ctx := context.Background()
 	if len(usermngt.GetUsersList(ctx)) == 0 {
 		rootLogin := os.Getenv(EnvRootLogin)
@@ -102,21 +102,37 @@ func createAdminOnFirstStart() (err error) {
 
 		log.Infof("As it is the first start of MyRoomies server, a 'root' account "+
 			"is being created. Login: %s", rootLogin)
-		err = usermngt.CreateUser(ctx, models.User{
+		err := usermngt.CreateUser(ctx, models.User{
 			Firstname: "root",
 			Lastname:  "root",
 			IsAdmin:   true,
 			Login:     rootLogin,
 			Password:  models.PasswordType(rootPassword),
 		})
-		log.Print("'root' account created")
+		if err != nil {
+			return err
+		}
+		log.Info("'root' account created")
 	}
-	return err
+	return nil
 }
 
 type ServerConfig struct {
+	// The URL of the the datastore like 'mongodb://localhost:27017'. If empty,
+	// or not match the MongoDB URL, the datastore will be the memory (data not
+	// persisted).
 	Storage string
-	BindTo  string
+
+	// The address to bind the listening socket to. Example: 'localhost:8080'
+	// or ':8080'.
+	BindTo string
+
+	// The location of the certificate or the certificates chain.
+	CertificatePath string
+
+	// The location of the private key file corresponding to the given
+	// certificate.
+	KeyPath string
 }
 
 func registerSignalHandlers() {
@@ -130,7 +146,21 @@ func registerSignalHandlers() {
 	}()
 }
 
-func Start(config ServerConfig) {
+func validateConfiguration(config ServerConfig) error {
+	if config.CertificatePath != "" && config.KeyPath == "" {
+		return errors.New("A path to a certificate was given but no path to a private key.")
+	}
+	if config.CertificatePath == "" && config.KeyPath != "" {
+		return errors.New("A path to a private key was given but no path to a certificate.")
+	}
+
+	return nil
+}
+
+func Start(config ServerConfig) (err error) {
+	if err = validateConfiguration(config); err != nil {
+		return
+	}
 	registerSignalHandlers()
 	if strings.Contains(config.Storage, "mongodb://") {
 		services.Configure(data.MongoDataAccessParams{Server: config.Storage})
@@ -141,10 +171,20 @@ func Start(config ServerConfig) {
 		services.Configure(nil)
 	}
 	registerEndpoints()
-	if err := createAdminOnFirstStart(); err != nil {
-		log.Printf("Error at startup: %s", err)
-		os.Exit(1)
+	if err = createAdminOnFirstStart(); err != nil {
+		return
 	}
-	log.Printf("Listening on [%s]...", config.BindTo)
-	log.Fatal(http.ListenAndServe(config.BindTo, nil))
+	if config.CertificatePath == "" && config.KeyPath == "" {
+		log.Warn("No certificate and no private key provided. The server " +
+			"will run in plain HTTP: this is unsecured.")
+		log.Printf("Listening on [%s] (HTTPS not activated).", config.BindTo)
+		err = http.ListenAndServe(config.BindTo, nil)
+	} else {
+		log.Printf("Listening on [%s] (HTTPS activated).", config.BindTo)
+		err = http.ListenAndServeTLS(config.BindTo,
+			config.CertificatePath,
+			config.KeyPath,
+			nil)
+	}
+	return
 }
