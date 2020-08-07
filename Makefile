@@ -1,15 +1,23 @@
 GO := go
+PREFIX ?= $(HOME)/.local
+
+SERVER_BIN := myroomies-server
+CLIENT_BIN := myroomies-client
 
 .PHONY: all
 all: build-server build-client
 
 .PHONY: build-server
 build-server:
-	$(GO) build ./cmd/myroomies-server
+	$(GO) build ./cmd/$(SERVER_BIN)
 
 .PHONY: build-client
 build-client:
-	$(GO) build ./cmd/myroomies-client
+	$(GO) build ./cmd/$(CLIENT_BIN)
+
+.PHONY: install-client
+install-client: build-client
+	cp $(CLIENT_BIN) $(PREFIX)/bin/myroomies
 
 .PHONY: test-e2e
 test-e2e: all
