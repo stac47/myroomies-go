@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/stac47/myroomies/pkg/models"
@@ -56,6 +57,19 @@ func (dao *MongoExpenseDataAccess) RetrieveExpenseFromId(ctx context.Context, id
 }
 
 func (dao *MongoExpenseDataAccess) UpdateExpense(ctx context.Context, updatedExpense models.Expense) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout*time.Second)
+	defer cancel()
+	objectId, _ := primitive.ObjectIDFromHex(updatedExpense.Id)
+	filter := bson.M{"_id": objectId}
+	// Clear the _id
+	updatedExpense.Id = ""
+	result := dao.getCollection().FindOneAndReplace(ctx, filter, updatedExpense)
+	if result == nil {
+		msg := fmt.Sprintf("Expense [%s] was not updated", updatedExpense.Id)
+		return errors.New(msg)
+	} else if result.Err() != nil {
+		return result.Err()
+	}
 	return nil
 }
 

@@ -44,6 +44,20 @@ func createExpense(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func updateExpense(w http.ResponseWriter, r *http.Request) {
+	var expenseUpdate models.Expense
+	if err := decodeJson(w, r.Body, &expenseUpdate); err != nil {
+		return
+	}
+	authenticatedUser, _ := GetAuthenticatedUser(r.Context())
+	isPatchMethod := r.Method == http.MethodPatch
+	_, err := expensemngt.UpdateExpense(r.Context(), authenticatedUser, expenseUpdate, isPatchMethod)
+	if err != nil {
+		http.Error(w, models.NewRestError(err.Error()).ToJSON(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func deleteExpense(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]

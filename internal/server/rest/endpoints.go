@@ -19,6 +19,45 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func registerEndpoints() {
+	router := mux.NewRouter()
+
+	// Add your handlers hereafter
+	// Technical handlers
+	router.HandleFunc("/info", getGlobalInfo).Methods("GET")
+	router.HandleFunc("/reset",
+		hasRights(AdminRight, resetServer)).Methods("POST")
+
+	// User management handlers
+	router.HandleFunc("/users",
+		hasRights(AuthenticatedRight, retrieveUsers)).Methods("GET")
+	router.HandleFunc("/users",
+		hasRights(AdminRight, createUser)).Methods("POST")
+	router.HandleFunc("/users/{login:[a-zA-Z0-9]+}",
+		hasRights(AuthenticatedRight, getUserInfo)).Methods("GET")
+	router.HandleFunc("/users/{login:[a-zA-Z0-9]+}",
+		hasRights(AuthenticatedRight, updateUser)).Methods("PUT")
+	router.HandleFunc("/users/{login:[a-zA-Z0-9]+}",
+		hasRights(AdminRight, deleteUser)).Methods("DELETE")
+
+	// Expense handlers
+	router.HandleFunc("/expenses",
+		hasRights(AuthenticatedRight, retrieveAllExpenses)).Methods("GET")
+	router.HandleFunc("/expenses",
+		hasRights(AuthenticatedRight, createExpense)).Methods("POST")
+	router.HandleFunc("/expenses/{id:[a-z0-9]+}",
+		hasRights(AuthenticatedRight, updateExpense)).Methods("PUT", "PATCH")
+	router.HandleFunc("/expenses/{id:[a-z0-9]+}",
+		hasRights(AuthenticatedRight, deleteExpense)).Methods("DELETE")
+	router.HandleFunc("/expenses/{id:[a-z0-9]+}",
+		hasRights(AuthenticatedRight, getExpenseInfo)).Methods("GET")
+
+	var authentication authenticationMiddleware
+	router.Use(authentication.Middleware)
+
+	http.Handle("/", router)
+}
+
 type AccessRight int
 
 const (
@@ -47,43 +86,6 @@ func hasRights(accessRights AccessRight, f http.HandlerFunc) http.HandlerFunc {
 		}
 		f(w, r)
 	})
-}
-
-func registerEndpoints() {
-	router := mux.NewRouter()
-
-	// Add your handlers hereafter
-	// Technical handlers
-	router.HandleFunc("/info", getGlobalInfo).Methods("GET")
-	router.HandleFunc("/reset",
-		hasRights(AdminRight, resetServer)).Methods("POST")
-
-	// User management handlers
-	router.HandleFunc("/users",
-		hasRights(AuthenticatedRight, retrieveUsers)).Methods("GET")
-	router.HandleFunc("/users",
-		hasRights(AdminRight, createUser)).Methods("POST")
-	router.HandleFunc("/users/{login:[a-zA-Z0-9]+}",
-		hasRights(AuthenticatedRight, getUserInfo)).Methods("GET")
-	router.HandleFunc("/users/{login:[a-zA-Z0-9]+}",
-		hasRights(AuthenticatedRight, updateUser)).Methods("PUT")
-	router.HandleFunc("/users/{login:[a-zA-Z0-9]+}",
-		hasRights(AdminRight, deleteUser)).Methods("DELETE")
-
-	// Expense handlers
-	router.HandleFunc("/expenses",
-		hasRights(AuthenticatedRight, retrieveAllExpenses)).Methods("GET")
-	router.HandleFunc("/expenses",
-		hasRights(AuthenticatedRight, createExpense)).Methods("POST")
-	router.HandleFunc("/expenses/{id:[a-z0-9]+}",
-		hasRights(AuthenticatedRight, getExpenseInfo)).Methods("GET")
-	router.HandleFunc("/expenses/{id:[a-z0-9]+}",
-		hasRights(AuthenticatedRight, deleteExpense)).Methods("DELETE")
-
-	var authentication authenticationMiddleware
-	router.Use(authentication.Middleware)
-
-	http.Handle("/", router)
 }
 
 func createAdminOnFirstStart() error {

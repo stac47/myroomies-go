@@ -24,10 +24,8 @@ type Client struct {
 
 // Create a myroomies client
 func NewClient(myroomiesUrl, login, password string, debug bool) (Client, error) {
-	// As MyRoomies run on the Django development server, it does not accept
-	// requests on the same connection. We forbid reusing the same connection.
 	tr := &http.Transport{
-		DisableKeepAlives: true,
+		DisableKeepAlives: false,
 	}
 	c := Client{
 		url: myroomiesUrl,

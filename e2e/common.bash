@@ -87,9 +87,27 @@ function myroomies_user_json() {
 }
 
 function myroomies_expense_json() {
-    local amount=${1:?"Missing expense amount"}
-    local recipient=${2:?"Missing expense recipient"}
-    local date=${3:?"Missing expense date"}
-    local description=${4:?"Missing expense description"}
-    echo "{\"Amount\": ${amount}, \"Recipient\":\"${recipient}\", \"Date\":\"${date}\", \"Description\": \"${description}\"}"
+    local amount=${1:-""}
+    local recipient=${2:-""}
+    local date=${3:-""}
+    local description=${4:-""}
+    local id=${5:-""}
+    local json="{"
+    if [[ -n ${amount} ]]; then
+        json+="\"Amount\": ${amount},"
+    fi
+    if [[ -n ${recipient} ]]; then
+        json+="\"Recipient\": \"${recipient}\","
+    fi
+    if [[ -n ${date} ]]; then
+        json+="\"Date\": \"${date}\","
+    fi
+    if [[ -n ${description} ]]; then
+        json+="\"Description\": \"${description}\","
+    fi
+    if [[ -n ${id} ]]; then
+        json+="\"Id\": \"${id}\","
+    fi
+    json+="}"
+    echo ${json/%,\}/\}}
 }
