@@ -41,7 +41,7 @@ function teardown() {
     run curl --silent \
         -u stef:ribo \
         -i -X POST \
-        -d "$(myroomies_expense_json '50' 'Shop 2' '2020-07-01T00:00:00.000Z' 'Expense 2')" \
+        -d "$(myroomies_expense_json '50' 'Shop 2' '2020-07-01T00:00:00.000Z' 'Expense 3')" \
         ${MYROOMIES_SERVER_URL}/expenses
     assert_success
     assert_line --index 0 --partial 'HTTP/1.1 201 Created'
@@ -51,7 +51,7 @@ function teardown() {
     run curl --silent \
         -u ${DEFAULT_HTTP_AUTHORIZATION} \
         -i -X POST \
-        -d "$(myroomies_expense_json '470' 'Shop 3' '2020-06-30T00:00:00.000Z' 'Expense 3')" \
+        -d "$(myroomies_expense_json '470' 'Shop 3' '2020-06-30T00:00:00.000Z' 'Expense 2')" \
         ${MYROOMIES_SERVER_URL}/expenses
     assert_success
     assert_line --index 0 --partial 'HTTP/1.1 201 Created'
@@ -65,6 +65,25 @@ function teardown() {
         ${MYROOMIES_SERVER_URL}${expense_uri}
     assert_success
     assert_line --index 0 --partial 'HTTP/1.1 200 OK'
+
+    # Getting all expenses
+    run curl --silent \
+        -u ${DEFAULT_HTTP_AUTHORIZATION} \
+        -X GET \
+        ${MYROOMIES_SERVER_URL}/expenses
+    assert_success
+    refute_output ''
+    json_response=$output
+    number_of_expenses=$(echo ${json_response} | jq '. | length')
+    run echo ${number_of_expenses}
+    assert_output '3'
+    # Verify if the expenses are ordered by date
+    for i in {0..2}; do
+        expense_name=$(echo ${json_response} | jq ".[$i].Description")
+        run echo ${expense_name}
+        assert_success
+        assert_output "\"Expense $(($i + 1))\""
+    done
 
     # Removing this last one
     run curl --silent \

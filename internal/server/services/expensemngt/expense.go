@@ -3,6 +3,7 @@ package expensemngt
 import (
 	"context"
 	"errors"
+	"sort"
 	"strings"
 	"time"
 
@@ -11,22 +12,56 @@ import (
 	"github.com/stac47/myroomies/pkg/models"
 )
 
+// Implement the less semantic
+type By func(e1, e2 *models.Expense) bool
+
+func (by By) Sort(expenses []models.Expense) {
+	es := &expenseSorter{
+		expenses: expenses,
+		by:       by,
+	}
+	sort.Sort(es)
+}
+
 type ExpenseListOptions struct {
 	Before time.Time
 	After  time.Time
+	SortBy By
 }
 
 func (o ExpenseListOptions) SelectAll() bool {
 	return o.Before.IsZero() && o.After.IsZero()
 }
 
-func GetExpensesList(ctx context.Context, options ExpenseListOptions) []models.Expense {
+type expenseSorter struct {
+	expenses []models.Expense
+	by       By
+}
+
+func (s *expenseSorter) Len() int {
+	return len(s.expenses)
+}
+
+func (s *expenseSorter) Swap(i, j int) {
+	s.expenses[i], s.expenses[j] = s.expenses[j], s.expenses[i]
+}
+
+func (s *expenseSorter) Less(i, j int) bool {
+	return s.by(&s.expenses[i], &s.expenses[j])
+}
+
+func GetExpensesList(ctx context.Context, options ExpenseListOptions) (expenses []models.Expense) {
 	if options.SelectAll() {
-		return services.GetDataAccess().GetExpenseDataAccess().RetrieveExpenses(ctx)
+		expenses = services.GetDataAccess().GetExpenseDataAccess().RetrieveExpenses(ctx)
 	} else {
 		// TODO: Not all
-		return services.GetDataAccess().GetExpenseDataAccess().RetrieveExpenses(ctx)
+		expenses = services.GetDataAccess().GetExpenseDataAccess().RetrieveExpenses(ctx)
 	}
+	date := func(e1, e2 *models.Expense) bool {
+		return e1.Date.Before(e2.Date)
+	}
+	By(date).Sort(expenses)
+	return expenses
 }
 
 func CreateExpense(ctx context.Context, authenticatedUser models.User, newExpense models.Expense) *models.Expense {
