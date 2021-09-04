@@ -43,30 +43,62 @@ func init() {
 	expenseCmd.AddCommand(listCmd)
 
 	// Create expense command
-	createCmd.Flags().StringVar(&params.recipient, "recipient", "", "Recipient of the expense")
+	createCmd.Flags().StringVar(&params.recipient,
+		"recipient",
+		"",
+		"Recipient of the expense")
 	createCmd.MarkFlagRequired("recipient")
-	createCmd.Flags().StringVar(&params.date, "date", "", "Date of the expense")
+	createCmd.Flags().StringVar(&params.date,
+		"date",
+		"",
+		"Date of the expense")
 	createCmd.MarkFlagRequired("date")
-	createCmd.Flags().StringVar(&params.description, "description", "", "Description of the expense")
+	createCmd.Flags().StringVar(&params.description,
+		"description",
+		"",
+		"Description of the expense")
 	createCmd.MarkFlagRequired("description")
-	createCmd.Flags().StringVar(&params.amount, "amount", "", "Amount of the expense")
+	createCmd.Flags().StringVar(&params.amount,
+		"amount",
+		"",
+		"Amount of the expense")
 	createCmd.MarkFlagRequired("amount")
 	expenseCmd.AddCommand(createCmd)
 
 	// Update expense command
-	updateCmd.Flags().StringVar(&params.recipient, "recipient", "", "Recipient of the expense")
-	updateCmd.Flags().StringVar(&params.date, "date", "", "Date of the expense")
-	updateCmd.Flags().StringVar(&params.description, "description", "", "Description of the expense")
-	updateCmd.Flags().StringVar(&params.amount, "amount", "", "Amount of the expense")
+	updateCmd.Flags().StringVar(&params.recipient,
+		"recipient",
+		"",
+		"Recipient of the expense")
+	updateCmd.Flags().StringVar(&params.date,
+		"date",
+		"",
+		"Date of the expense")
+	updateCmd.Flags().StringVar(&params.description,
+		"description",
+		"",
+		"Description of the expense")
+	updateCmd.Flags().StringVar(&params.amount,
+		"amount",
+		"",
+		"Amount of the expense")
 	expenseCmd.AddCommand(updateCmd)
 
 	// Delete expense command
 	expenseCmd.AddCommand(deleteCmd)
 
-	rootCmd.PersistentFlags().String("host", "http://fsgtcyclisme06.fr:8080", "Server on which MyRoomies is running")
-	rootCmd.PersistentFlags().String("user", "", "Current username")
-	rootCmd.PersistentFlags().String("password", "", "Current user password")
-	rootCmd.PersistentFlags().Bool("debug", false, "Run the client in debug mode")
+	rootCmd.PersistentFlags().String("host",
+		"http://fsgtcyclisme06.fr:8080",
+		"Server on which MyRoomies is running")
+	rootCmd.PersistentFlags().String("user",
+		"",
+		"Current username")
+	rootCmd.PersistentFlags().String("password",
+		"",
+		"Current user password")
+	rootCmd.PersistentFlags().Bool("debug",
+		false,
+		"Run the client in debug mode")
 	viper.BindPFlag("myroomies.host", rootCmd.PersistentFlags().Lookup("host"))
 	viper.BindPFlag("myroomies.login", rootCmd.PersistentFlags().Lookup("user"))
 	viper.BindPFlag("myroomies.password", rootCmd.PersistentFlags().Lookup("password"))
@@ -149,10 +181,7 @@ func deleteCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func updateCmdRun(cmd *cobra.Command, args []string) error {
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return err
-	}
+	id := args[0]
 	expense := &models.Expense{}
 	if params.date != "" {
 		t, err := time.Parse("2006-01-02", params.date)
@@ -228,8 +257,10 @@ func listCmdRun(cmd *cobra.Command, args []string) error {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"ID", "Date", "Recipient", "Description", "Roomie", "Amount"})
+	spentTotal := 0.0
 	for _, expense := range expenses {
 		roomiesMap[expense.PayerLogin] += expense.Amount
+		spentTotal += expense.Amount
 
 		t.AppendRow(table.Row{
 			expense.Id,
@@ -241,7 +272,9 @@ func listCmdRun(cmd *cobra.Command, args []string) error {
 		})
 	}
 	for k, v := range roomiesMap {
-		t.AppendFooter(table.Row{"", "", "", "Total", k, strconv.FormatFloat(v, 'f', 2, 64)})
+		balance := v - spentTotal/float64(len(roomiesMap))
+		t.AppendFooter(table.Row{"", "", "", "Total", k,
+			fmt.Sprintf("%.2f (%+.2f)", v, balance)})
 	}
 
 	t.SetStyle(table.StyleLight)

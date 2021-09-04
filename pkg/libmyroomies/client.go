@@ -86,7 +86,7 @@ func (c *Client) ExpenseCreate(expense models.Expense) (id string, err error) {
 	return
 }
 
-func (c *Client) ExpenseUpdate(id int, expense *models.Expense) error {
+func (c *Client) ExpenseUpdate(id string, expense *models.Expense) error {
 	return errors.New("Not yet implemented")
 }
 
